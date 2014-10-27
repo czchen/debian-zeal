@@ -31,11 +31,11 @@ Description: Simple offline API documentation browser
  Zeal is a simple offline API documentation browser inspired by Dash (OS X
  app), available for Linux and Windows.
  .
- * Quickly search documentation using Alt+Space (or customised) hotkey to
-   display Zeal from any place in your workspace.
- * Search in multiple sets of documentation at once.
- * Don't be dependent on your internet connection.
- * Integrate Zeal with Emacs, Sublime Text, or Vim.
+  * Quickly search documentation using Alt+Space (or customised) hotkey to
+    display Zeal from any place in your workspace.
+  * Search in multiple sets of documentation at once.
+  * Don't be dependent on your internet connection.
+  * Integrate Zeal with Emacs, Sublime Text, or Vim.
 
 Package: zeal-dbg
 Section: debug
@@ -47,10 +47,10 @@ Description: Debug symbols for zeal
  Zeal is a simple offline API documentation browser inspired by Dash (OS X
  app), available for Linux and Windows.
  .
- * Quickly search documentation using Alt+Space (or customised) hotkey to
-   display Zeal from any place in your workspace.
- * Search in multiple sets of documentation at once.
- * Don't be dependent on your internet connection.
- * Integrate Zeal with Emacs, Sublime Text, or Vim.
+  * Quickly search documentation using Alt+Space (or customised) hotkey to
+    display Zeal from any place in your workspace.
+  * Search in multiple sets of documentation at once.
+  * Don't be dependent on your internet connection.
+  * Integrate Zeal with Emacs, Sublime Text, or Vim.
  .
  This package contains debug symbols for zeal.
