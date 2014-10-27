@@ -4,20 +4,12 @@ Priority: optional
 Maintainer: ChangZhuo Chen (陳昌倬) <czchen@gmail.com>
 Build-Depends: debhelper (>= 9),
                libappindicator-dev,
-               libgstreamer0.10-dev,
-               libgstreamer-plugins-base0.10-dev,
-               libqt5opengl5-dev,
                libqt5webkit5-dev,
-               libsqlite3-dev,
-               libxcb1-dev,
                libxcb-keysyms1-dev,
-               libxslt1-dev,
                qt5-default,
                qt5-qmake,
                qtbase5-dev,
                qtbase5-private-dev,
-               qtdeclarative5-dev,
-               x11proto-core-dev,
 Standards-Version: 3.9.6
 Homepage: http://zealdocs.org/
 #Vcs-Git: git://anonscm.debian.org/collab-maint/zeal.git
