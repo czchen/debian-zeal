@@ -5,13 +5,13 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
 
 %:
-	dh $@
+	dh $@ --buildsystem=qmake
 
 override_dh_auto_configure:
-	qmake DESTDIR=$(CURDIR)/build $(CURDIR)/zeal/zeal.pro
+	dh_auto_configure -- DESTDIR=$(CURDIR)/build $(CURDIR)/zeal/zeal.pro
 
 override_dh_auto_install:
-	dh_auto_install -- INSTALL_ROOT=$(CURDIR)/debian/tmp
+	dh_auto_install
 	find $(CURDIR)/debian/tmp -name '*.png' -type f -exec chmod -x {} \;
 
 override_dh_strip:
