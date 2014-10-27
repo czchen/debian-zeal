@@ -1,0 +1,9 @@
+zeal-build-Desktop-Debug/
+zeal/zeal.pro.user
+*.o
+zeal/zeal
+zeal/moc_*.cpp
+zeal/ui_*.h
+zeal/Makefile
+build-zeal-Desktop*
+*.swp
