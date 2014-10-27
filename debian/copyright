@@ -1,6 +1,6 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: zeal
-Source: <url://example.com>
+Source: https://github.com/jkozera/zeal/
 
 Files: zeal/lineedit.cpp
 Copyright: Copyright (c) 2007 Trolltech ASA <info@trolltech.com>
