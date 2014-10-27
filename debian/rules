@@ -13,3 +13,6 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	dh_auto_install -- INSTALL_ROOT=$(CURDIR)/debian/tmp
 	find $(CURDIR)/debian/tmp -name '*.png' -type f -exec chmod -x {} \;
+
+override_dh_strip:
+	dh_strip --dbg-package=zeal-dbg
