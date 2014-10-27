@@ -1,0 +1,5 @@
+zeal (0~20141027-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- ChangZhuo Chen (陳昌倬) <czchen@gmail.com>  Mon, 27 Oct 2014 18:15:53 +0800
