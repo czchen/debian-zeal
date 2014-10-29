@@ -1,0 +1,30 @@
+Description: Use system libquazip-qt5
+--- a/zeal/zeal.pro
++++ b/zeal/zeal.pro
+@@ -96,7 +96,10 @@
+ unix:INSTALLS += appicons16 appicons24 appicons32 appicons64 appicons128 icons desktop
+ 
+ include (widgets/widgets.pri)
+-include (quazip/quazip.pri)
++;include (quazip/quazip.pri)
++INCLUDEPATH += /usr/include/quazip
++LIBS += -lquazip-qt5
++
+ 
+ RESOURCES += \
+     zeal.qrc
+--- a/zeal/zealsettingsdialog.cpp
++++ b/zeal/zealsettingsdialog.cpp
+@@ -14,8 +14,10 @@
+ #include <QFutureWatcher>
+ #include <QFileDialog>
+ #include <QtNetwork/QNetworkProxy>
+-#include "quazip/quazip.h"
+-#include "JlCompress.h"
++//#include "quazip/quazip.h"
++//#include "JlCompress.h"
++#include <quazip.h>
++#include <JlCompress.h>
+ #include "progressitemdelegate.h"
+ 
+ #include <QDebug>
