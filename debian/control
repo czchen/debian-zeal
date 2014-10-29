@@ -1,5 +1,5 @@
 Source: zeal
-Section: x11
+Section: utils
 Priority: optional
 Maintainer: ChangZhuo Chen (陳昌倬) <czchen@gmail.com>
 Build-Depends: debhelper (>= 9),
