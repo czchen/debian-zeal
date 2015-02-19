@@ -1,3 +1,2 @@
-# Not release yet. We might need to update this once the first version released.
-#version=3
-#https://github.com/jkozera/zeal/releases .*/(\d\S*).tar.gz
+version=3
+https://github.com/jkozera/zeal/releases .*/(\d\S*).tar.gz
