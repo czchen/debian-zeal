@@ -5,7 +5,6 @@
 #include "zealsearchquery.h"
 #include "zealdocsetsregistry.h"
 #include "zealsearchitemdelegate.h"
-#include "zealnetworkaccessmanager.h"
 
 #include <QtDebug>
 #include <QCoreApplication>
@@ -19,11 +18,16 @@
 #include <QSettings>
 #include <QTimer>
 #include <QToolButton>
-#include <QWebSettings>
+#ifdef USE_WEBENGINE
+    #include <QWebEngineSettings>
+    #include <QWebEngineHistory>
+#else
+    #include <QWebSettings>
+    #include <QWebFrame>
+    #include <QWebHistory>
+#endif
 #include <QNetworkProxyFactory>
 #include <QAbstractNetworkCache>
-#include <QWebFrame>
-#include <QWebHistory>
 #include <QScrollBar>
 #include <QShortcut>
 
@@ -64,7 +68,7 @@ MainWindow::MainWindow(QWidget *parent) :
         // Wait a little while the other side writes the bytes
         connection->waitForReadyRead();
         QString indata = connection->readAll();
-        if(!indata.isEmpty()) {
+        if (!indata.isEmpty()) {
             bringToFrontAndSearch(indata);
         }
     });
@@ -84,11 +88,11 @@ MainWindow::MainWindow(QWidget *parent) :
     icon = QIcon::fromTheme("zeal");
 #endif
     setWindowIcon(icon);
-    if(settings.value("hidingBehavior", "systray").toString() == "systray")
+    if (settings.value("hidingBehavior", "systray").toString() == "systray")
         createTrayIcon();
 
     QKeySequence keySequence;
-    if(settings.value("hotkey").isNull()) {
+    if (settings.value("hotkey").isNull()) {
         keySequence = QKeySequence("Alt+Space");
     } else {
         keySequence = settings.value("hotkey").value<QKeySequence>();
@@ -96,13 +100,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // initialise key grabber
     connect(&nativeFilter, &ZealNativeEventFilter::gotHotKey, [&]() {
-        if(!isVisible() || !isActiveWindow()) {
+        if (!isVisible() || !isActiveWindow()) {
             bringToFront(true);
         } else {
 #ifdef USE_LIBAPPINDICATOR
-            if(trayIcon || indicator) {
+            if (trayIcon || indicator) {
 #else
-            if(trayIcon) {
+            if (trayIcon) {
 #endif
                 hide();
             } else {
@@ -126,12 +130,16 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->splitter, &QSplitter::splitterMoved, [=](int, int) {
         settings.setValue("splitter", ui->splitter->saveState());
     });
-    ui->webView->settings()->setFontSize(QWebSettings::MinimumFontSize, settings.value("minFontSize").toInt());
-    ZealNetworkAccessManager * zealNaManager = new ZealNetworkAccessManager();
-    zealNaManager->setProxy(settingsDialog.httpProxy());
-    ui->webView->page()->setNetworkAccessManager(zealNaManager);
 
-    
+    applyWebPageStyle();
+    zealNaManager = new ZealNetworkAccessManager();
+    zealNaManager->setProxy(settingsDialog.httpProxy());
+#ifdef USE_WEBENGINE
+    // FIXME AngularJS workaround (zealnetworkaccessmanager.cpp)
+#else
+    ui->webView->page()->setNetworkAccessManager(zealNaManager);
+#endif
+
     // menu
     if (QKeySequence(QKeySequence::Quit) != QKeySequence("Ctrl+Q")) {
         ui->action_Quit->setShortcuts(QList<QKeySequence>{QKeySequence("Ctrl+Q"), QKeySequence::Quit});
@@ -146,15 +154,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(&settingsDialog, SIGNAL(refreshRequested()), this, SLOT(refreshRequest()));
     connect(&settingsDialog, SIGNAL(minFontSizeChanged(int)), this, SLOT(changeMinFontSize(int)));
+    connect(&settingsDialog, SIGNAL(webPageStyleUpdated()), this, SLOT(applyWebPageStyle()));
 
     connect(ui->action_Options, &QAction::triggered, [=]() {
         settingsDialog.setHotKey(hotKey);
         nativeFilter.setEnabled(false);
-        if(settingsDialog.exec()) {
+        if (settingsDialog.exec()) {
             setHotKey(settingsDialog.hotKey());
-            if(settings.value("hidingBehavior").toString() == "systray") {
+            if (settings.value("hidingBehavior").toString() == "systray") {
                 createTrayIcon();
-            } else if(trayIcon) {
+            } else if (trayIcon) {
                 trayIcon->deleteLater();
                 trayIconMenu->deleteLater();
                 trayIcon = nullptr;
@@ -251,7 +260,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
         searchState->searchQuery = text;
         searchState->zealSearch.setQuery(text);
-        if(text.isEmpty()) {
+        if (text.isEmpty()) {
             ui->treeView->setModel(&zealList);
         }
     });
@@ -284,10 +293,10 @@ MainWindow::MainWindow(QWidget *parent) :
 #endif
     addAction(ui->action_CloseTab);
     connect(ui->action_CloseTab, &QAction::triggered, [&]() {
-        closeTab(-1);
+        closeTab();
     });
 
-    tabBar.setTabsClosable(false);
+    tabBar.setTabsClosable(true);
     tabBar.setExpanding(false);
     tabBar.setUsesScrollButtons(true);
     tabBar.setDrawBase(false);
@@ -321,15 +330,14 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete localServer;
 }
 
 void MainWindow::openDocset(const QModelIndex &index)
 {
-    if(!index.sibling(index.row(), 1).data().isNull()) {
+    if (!index.sibling(index.row(), 1).data().isNull()) {
         QStringList url_l = index.sibling(index.row(), 1).data().toString().split('#');
         QUrl url = QUrl::fromLocalFile(url_l[0]);
-        if(url_l.count() > 1) {
+        if (url_l.count() > 1) {
             url.setFragment(url_l[1]);
         }
         ui->webView->load(url);
@@ -341,7 +349,7 @@ void MainWindow::openDocset(const QModelIndex &index)
     }
 }
 
-QIcon MainWindow::docsetIcon(QString docsetName)
+QIcon MainWindow::docsetIcon(const QString &docsetName)
 {
     if (docsets->names().contains(docsetName)) {
         return docsets->icon(docsetName).pixmap(32,32);
@@ -368,7 +376,7 @@ void MainWindow::goToTab(int index)
     reloadTabState();
 }
 
-void MainWindow::closeTab(int index = -1)
+void MainWindow::closeTab(int index)
 {
     if (index == -1) {
         index = tabBar.currentIndex();
@@ -396,7 +404,10 @@ void MainWindow::createTab()
     ui->lineEdit->setText("");
 
     newTab->page = new QWebPage(ui->webView);
+#ifndef USE_WEBENGINE
     newTab->page->setLinkDelegationPolicy(QWebPage::DelegateExternalLinks);
+    newTab->page->setNetworkAccessManager(zealNaManager);
+#endif
 
     ui->treeView->setModel(NULL);
     ui->treeView->setModel(&zealList);
@@ -409,7 +420,11 @@ void MainWindow::createTab()
     tabBar.setCurrentIndex(tabs.size() - 1);
 
     reloadTabState();
+#ifdef USE_WEBENGINE
+    newTab->page->load(QUrl("qrc:///webpage/Welcome.html"));
+#else
     newTab->page->mainFrame()->load(QUrl("qrc:///webpage/Welcome.html"));
+#endif
 }
 
 void MainWindow::displayTabs()
@@ -427,12 +442,22 @@ void MainWindow::displayTabs()
 
     for (int i = 0; i < tabs.count(); i++) {
         SearchState *state = tabs.at(i);
+#ifdef USE_WEBENGINE
+        QString title = state->page->title();
+#else
         QString title = state->page->history()->currentItem().title();
+#endif
         QAction *action = ui->menu_Tabs->addAction(title);
         action->setCheckable(true);
         action->setChecked(i == tabBar.currentIndex());
         if (i < 10) {
-            QString shortcut = QString("Ctrl+%1").arg(QString::number(i+1));
+            QString shortcut;
+            if (i == 9) {
+                shortcut = QString("Ctrl+%1").arg(QString::number(0));
+            }
+            else {
+                shortcut = QString("Ctrl+%1").arg(QString::number(i+1));
+            }
             auto actions_ = actions();
             for (int i = 0; i < actions_.length(); ++i) {
                  if (actions_[i]->shortcut().toString() == shortcut) {
@@ -476,6 +501,7 @@ void MainWindow::reloadTabState()
     }
 
     ui->webView->setPage(searchState->page);
+    ui->webView->setZealZoomFactor(searchState->zoomFactor);
 
     int resultCount = searchState->sectionsList.rowCount(QModelIndex());
     ui->sections->setVisible(resultCount > 1);
@@ -499,6 +525,7 @@ void MainWindow::saveTabState()
     searchState->selections = ui->treeView->selectionModel()->selectedIndexes();
     searchState->scrollPosition = ui->treeView->verticalScrollBar()->value();
     searchState->sectionsScroll = ui->sections->verticalScrollBar()->value();
+    searchState->zoomFactor = ui->webView->zealZoomFactor();
 }
 
 void MainWindow::onSearchComplete()
@@ -506,7 +533,7 @@ void MainWindow::onSearchComplete()
     searchState->zealSearch.onQueryCompleted(docsets->getQueryResults());
 }
 
-void MainWindow::loadSections(const QString docsetName, const QUrl &url)
+void MainWindow::loadSections(const QString &docsetName, const QUrl &url)
 {
     QString dir = docsets->dir(docsetName).absolutePath();
     QString urlPath = url.path();
@@ -526,7 +553,7 @@ void MainWindow::setupSearchBoxCompletions() {
     ui->lineEdit->setCompletions(completions);
 }
 
-QString MainWindow::getDocsetName(QString urlPath) {
+QString MainWindow::getDocsetName(const QString &urlPath) {
     QRegExp docsetRegex("/([^/]+)[.]docset");
     return (docsetRegex.indexIn(urlPath) != -1)
             ? docsetRegex.cap(1)
@@ -551,7 +578,8 @@ void MainWindow::displayViewActions() {
     for (QWebHistoryItem item: history->backItems(10)) {
         backMenu.addAction(addHistoryAction(history, item));
     }
-    addHistoryAction(history, history->currentItem())->setEnabled(false);
+    if (history->count() > 0)
+        addHistoryAction(history, history->currentItem())->setEnabled(false);
     for (QWebHistoryItem item: history->forwardItems(10)) {
         forwardMenu.addAction(addHistoryAction(history, item));
     }
@@ -595,19 +623,16 @@ void onQuit(GtkMenu *menu, gpointer data)
 void MainWindow::createTrayIcon()
 {
 #ifdef USE_LIBAPPINDICATOR
-    if(trayIcon || indicator) return;
+    if (trayIcon || indicator) return;
 #else
-    if(trayIcon) return;
+    if (trayIcon) return;
 #endif
 
-    QString desktop;
-    bool isUnity;
-
-    desktop = getenv("XDG_CURRENT_DESKTOP");
-    isUnity = (desktop.toLower() == "unity");
-
 #ifdef USE_LIBAPPINDICATOR
-    if(isUnity) //Application Indicators for Unity
+    const QString desktop = getenv("XDG_CURRENT_DESKTOP");
+    const bool isUnity = (desktop.toLower() == "unity");
+
+    if (isUnity) //Application Indicators for Unity
     {
         GtkWidget *menu;
         GtkWidget *quitItem;
@@ -633,9 +658,11 @@ void MainWindow::createTrayIcon()
         trayIcon->setIcon(icon);
         trayIcon->setToolTip("Zeal");
         connect(trayIcon, &QSystemTrayIcon::activated, [&](QSystemTrayIcon::ActivationReason reason) {
-            if(reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) {
-                if(isVisible()) hide();
-                else bringToFront(false);
+            if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) {
+                if (isVisible())
+                    hide();
+                else
+                    bringToFront(false);
             }
         });
         trayIcon->show();
@@ -647,7 +674,7 @@ void MainWindow::createTrayIcon()
 void MainWindow::bringToFront(bool withHack)
 {
     show();
-    setWindowState( (windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
+    setWindowState((windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
     raise();
     activateWindow();
     ui->lineEdit->setFocus();
@@ -655,7 +682,7 @@ void MainWindow::bringToFront(bool withHack)
 #ifndef WIN32
     // Very ugly workaround for the problem described at http://stackoverflow.com/questions/14553810/
     // (just show and hide a modal dialog box, which for some reason restores proper keyboard focus)
-    if(withHack) {
+    if (withHack) {
         hackDialog.setGeometry(0, 0, 0, 0);
         hackDialog.setModal(true);
         hackDialog.show();
@@ -664,7 +691,7 @@ void MainWindow::bringToFront(bool withHack)
 #endif
 }
 
-void MainWindow::bringToFrontAndSearch(const QString query)
+void MainWindow::bringToFrontAndSearch(const QString &query)
 {
     bringToFront(true);
     searchState->zealSearch.setQuery(query);
@@ -675,9 +702,7 @@ void MainWindow::bringToFrontAndSearch(const QString query)
 
 bool MainWindow::startHidden()
 {
-    if(settings.value("startupBehavior", "window").toString() == "systray")
-        return true;
-    return false;
+    return settings.value("startupBehavior", "window").toString() == "systray";
 }
 
 void MainWindow::setupShortcuts()
@@ -705,18 +730,18 @@ void MainWindow::setHotKey(const QKeySequence& hotKey_) {
     // platform-specific code for global key grabbing
 #ifdef WIN32
     UINT i_vk, i_mod = 0;
-    if(!hotKey.isEmpty()) {
+    if (!hotKey.isEmpty()) {
         // disable previous hotkey
         UnregisterHotKey(NULL, 10);
     }
     hotKey = hotKey_;
     nativeFilter.setHotKey(hotKey);
     settings.setValue("hotkey", hotKey);
-    if(hotKey.isEmpty()) return;
+    if (hotKey.isEmpty()) return;
     int key = hotKey[0];
-    if(key & Qt::ALT) i_mod |= MOD_ALT;
-    if(key & Qt::CTRL) i_mod |= MOD_CONTROL;
-    if(key & Qt::SHIFT) i_mod |= MOD_SHIFT;
+    if (key & Qt::ALT) i_mod |= MOD_ALT;
+    if (key & Qt::CTRL) i_mod |= MOD_CONTROL;
+    if (key & Qt::SHIFT) i_mod |= MOD_SHIFT;
     key = key & ~(Qt::ALT | Qt::CTRL | Qt::SHIFT | Qt::META);
 #ifndef VK_VOLUME_DOWN
 #define VK_VOLUME_DOWN          0xAE
@@ -768,11 +793,11 @@ void MainWindow::setHotKey(const QKeySequence& hotKey_) {
         case Qt::Key_MediaPrevious: i_vk = VK_MEDIA_PREV_TRACK; break;
         case Qt::Key_MediaNext: i_vk = VK_MEDIA_NEXT_TRACK; break;
         default:
-            i_vk = toupper( key );
+            i_vk = toupper(key);
             break;
     }
 
-    if(!RegisterHotKey(NULL, 10, i_mod, i_vk)) {
+    if (!RegisterHotKey(NULL, 10, i_mod, i_vk)) {
         hotKey = QKeySequence();
         nativeFilter.setHotKey(hotKey);
         settings.setValue("hotkey", hotKey);
@@ -784,7 +809,7 @@ void MainWindow::setHotKey(const QKeySequence& hotKey_) {
     xcb_connection_t *c = static_cast<xcb_connection_t*>(platform->nativeResourceForWindow("connection", 0));
     xcb_key_symbols_t *keysyms = xcb_key_symbols_alloc(c);
 
-    if(!hotKey.isEmpty()) {
+    if (!hotKey.isEmpty()) {
         // remove previous bindings from all screens
         xcb_screen_iterator_t iter;
         iter = xcb_setup_roots_iterator (xcb_get_setup (c));
@@ -796,12 +821,12 @@ void MainWindow::setHotKey(const QKeySequence& hotKey_) {
     nativeFilter.setHotKey(hotKey);
     settings.setValue("hotkey", hotKey);
 
-    if(hotKey.isEmpty()) return;
+    if (hotKey.isEmpty()) return;
 
     xcb_keysym_t keysym = GetX11Key(hotKey[0]);
     xcb_keycode_t *keycodes = xcb_key_symbols_get_keycode(keysyms, keysym), keycode;
 
-    if(!keycodes) {
+    if (!keycodes) {
         hotKey = QKeySequence();
         nativeFilter.setHotKey(hotKey);
         settings.setValue("hotkey", hotKey);
@@ -812,36 +837,46 @@ void MainWindow::setHotKey(const QKeySequence& hotKey_) {
 
     // add bindings for all screens
     xcb_screen_iterator_t iter;
-    iter = xcb_setup_roots_iterator (xcb_get_setup (c));
+    iter = xcb_setup_roots_iterator(xcb_get_setup (c));
     bool any_failed = false;
     for (; iter.rem; xcb_screen_next (&iter)) {
         int i = 0;
-        while(keycodes[i] != XCB_NO_SYMBOL) {
+        while (keycodes[i] != XCB_NO_SYMBOL) {
             keycode = keycodes[i];
-            for(auto modifier : GetX11Modifier(c, keysyms, hotKey[0])) {
+            for (auto modifier : GetX11Modifier(c, keysyms, hotKey[0])) {
                 auto cookie = xcb_grab_key_checked(c, true, iter.data->root,
                     modifier, keycode, XCB_GRAB_MODE_SYNC, XCB_GRAB_MODE_SYNC);
-                if(xcb_request_check(c, cookie)) {
+                if (xcb_request_check(c, cookie))
                     any_failed = true;
-                }
             }
             i += 1;
         }
     }
-    if(any_failed) {
+    if (any_failed) {
         QMessageBox::warning(this, "Key binding warning",
-            "Warning: Global hotkey binding problem detected. Some other program might have a conflicting "
-            "key binding. If the hotkey doesn't work, try closing some programs or using a different hotkey.");
+                "Warning: Global hotkey binding problem detected. Some other program might have a conflicting key binding with "
+                "<strong>" + hotKey.toString() + "</strong>"
+                ". If the hotkey doesn't work, try closing some programs or using a different hotkey.");
     }
     free(keysyms);
     free(keycodes);
 #endif // WIN32 or LINUX
 }
 
-void MainWindow::refreshRequest(){
+void MainWindow::refreshRequest()
+{
     ui->treeView->reset();
 }
 
-void MainWindow::changeMinFontSize(int minFont){
-    ui->webView->settings()->setFontSize(QWebSettings::MinimumFontSize, minFont);
+void MainWindow::changeMinFontSize(int minFont)
+{
+    QWebSettings::globalSettings()->setFontSize(QWebSettings::MinimumFontSize, minFont);
+}
+
+void MainWindow::applyWebPageStyle()
+{
+    if (settings.contains("minFontSize")) {
+        int minFont = settings.value("minFontSize").toInt();
+        QWebSettings::globalSettings()->setFontSize(QWebSettings::MinimumFontSize, minFont);
+    }
 }
