@@ -4,7 +4,12 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets webkitwidgets sql gui-private xml
+QT       += core gui widgets sql gui-private xml webkitwidgets
+
+use_webengine {
+    QT      += webenginewidgets
+    DEFINES += USE_WEBENGINE
+}
 
 
 TARGET = zeal
@@ -52,7 +57,8 @@ FORMS    += mainwindow.ui \
     zealsettingsdialog.ui
 
 
-QMAKE_CXXFLAGS += -std=c++11
+!msvc:QMAKE_CXXFLAGS += -std=c++11
+msvc:INCLUDEPATH += $$[QT_INSTALL_HEADERS]/QtZlib
 
 macx:DEFINES += OSX
 macx:QMAKE_CXXFLAGS += -mmacosx-version-min=10.7 -stdlib=libc+
@@ -61,13 +67,15 @@ macx:CONFIG += c++11
 win32:RC_ICONS = zeal.ico
 win32:DEFINES += WIN32 QUAZIP_BUILD
 DEFINES += ZEAL_VERSION=\\\"20140215\\\"
-LIBS += -lz -L/usr/lib
+!msvc:LIBS += -lz -L/usr/lib
+msvc:QMAKE_LIBS += user32.lib
 
 CONFIG += link_pkgconfig
 
 unix:!macx: LIBS += -lxcb -lxcb-keysyms
 unix:!macx: SOURCES += xcb_keysym.cpp
 unix:!macx: DEFINES += LINUX
+unix:!macx: QMAKE_DEL_DIR = rmdir --ignore-fail-on-non-empty
 
 unix:!macx:!no_libappindicator {
     INCLUDEPATH += /usr/include/libappindicator-0.1 \

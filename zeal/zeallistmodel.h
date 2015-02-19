@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+
 using namespace std;
 
 class ZealListModel : public QAbstractItemModel
@@ -38,11 +39,16 @@ private:
     const QHash<QPair<QString, QString>, int> getModulesCounts() const;
     QSet<QString> *strings;
     const QPair<QString, QString> getItem(const QString& path, int index) const;
-    const QString* getString(const QString& str) const {
-        if(strings->find(str) == strings->end())
+    const QString* getString(const QString& str) const
+    {
+        if (strings->find(str) == strings->end())
             (*strings).insert(str);
         return &*strings->find(str);
     }
+};
+
+enum ZealList {
+    DocsetName = Qt::UserRole
 };
 
 #endif // ZEALLISTMODEL_H

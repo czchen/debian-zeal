@@ -51,6 +51,7 @@ private:
     QNetworkReply *startDownload(const ZealDocsetMetadata &meta, qint8 retries = 0);
     void stopDownloads();
     void saveSettings();
+    const QString getTarPath() const;
 
     enum DocsetProgressRoles {
         ZealDocsetDoneInstalling = Qt::UserRole + 20,
@@ -62,6 +63,7 @@ private:
 signals:
     void refreshRequested();
     void minFontSizeChanged(int minFont);
+    void webPageStyleUpdated();
 
 private slots:
     void downloadDocsetList();

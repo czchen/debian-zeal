@@ -8,12 +8,20 @@
 #include <QSettings>
 #include <QSystemTrayIcon>
 #include <QCloseEvent>
-#include <QWebHistory>
+#ifdef USE_WEBENGINE
+    #include <QWebEngineHistory>
+    #define QWebPage QWebEnginePage
+    #define QWebHistory QWebEngineHistory
+    #define QWebHistoryItem QWebEngineHistoryItem
+#else
+    #include <QWebHistory>
+#endif
 #include <QModelIndex>
 #include "zeallistmodel.h"
 #include "zealsearchmodel.h"
 #include "zealnativeeventfilter.h"
 #include "zealsettingsdialog.h"
+#include "zealnetworkaccessmanager.h"
 
 #ifdef USE_LIBAPPINDICATOR
 #undef signals
@@ -30,9 +38,8 @@ extern const QString serverName;
 
 // Represents per tab search state.
 // needs to contain [search input, search model, section model, url]
-typedef struct SearchState
+struct SearchState
 {
-public:
     QWebPage *page;
     // model representing sections
     ZealSearchModel sectionsList;
@@ -48,57 +55,30 @@ public:
 
     int scrollPosition;
     int sectionsScroll;
-} SearchState;
+    int zoomFactor;
+};
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    
+
 public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
-    void bringToFrontAndSearch(const QString);
-    bool startHidden();
+
+    void bringToFrontAndSearch(const QString &query);
     void createTab();
+    bool startHidden();
 
-private:
-    void bringToFront(bool withHack);
-    void displayViewActions();
-    void loadSections(const QString docsetName, const QUrl &url);
-    void setupSearchBoxCompletions();
-    void reloadTabState();
-    void displayTabs();
-    void updateTreeView(QString text);
-    QIcon docsetIcon(QString docsetName);
-    QAction *addHistoryAction(QWebHistory *history, QWebHistoryItem item);
+protected:
+    void closeEvent(QCloseEvent *event) {
+        settings.setValue("geometry", saveGeometry());
+        event->ignore();
+        hide();
+    }
+    void setupShortcuts();
+    void keyPressEvent(QKeyEvent *keyEvent);
 
-    QList<SearchState*> tabs;
-
-    SearchState *searchState;
-
-    Ui::MainWindow *ui;
-    QIcon icon;
-    ZealListModel zealList;
-
-    QLocalServer *localServer;
-    QMenu backMenu;
-    QMenu forwardMenu;
-    QDialog hackDialog;
-    bool treeViewClicked;
-    void createTrayIcon();
-    void setHotKey(const QKeySequence& hotKey);
-    QKeySequence hotKey;
-    QSettings settings;
-    QTabBar tabBar;
-    ZealNativeEventFilter nativeFilter;
-    ZealSettingsDialog settingsDialog;
-    QSystemTrayIcon *trayIcon;
-#ifdef USE_LIBAPPINDICATOR
-    AppIndicator *indicator;  //for Unity
-#endif
-    QMenu *trayIconMenu;
-    QMap<QString, QString> urls;
-    QString getDocsetName(QString urlPath);
 private slots:
     void refreshRequest();
     void changeMinFontSize(int minFont);
@@ -110,15 +90,50 @@ private slots:
     void scrollSearch();
     void saveTabState();
     void goToTab(int index);
-    void closeTab(int index);
-protected:
-    void closeEvent(QCloseEvent *event) {
-        settings.setValue("geometry", saveGeometry());
-        event->ignore();
-        hide();
-    }
-    void setupShortcuts();
-    void keyPressEvent(QKeyEvent *keyEvent);
+    void closeTab(int index = -1);
+    void applyWebPageStyle();
+
+private:
+    void bringToFront(bool withHack);
+    void displayViewActions();
+    void loadSections(const QString &docsetName, const QUrl &url);
+    void setupSearchBoxCompletions();
+    void reloadTabState();
+    void displayTabs();
+    QIcon docsetIcon(const QString &docsetName);
+    QAction *addHistoryAction(QWebHistory *history, QWebHistoryItem item);
+    void createTrayIcon();
+    void setHotKey(const QKeySequence& hotKey);
+
+    QList<SearchState*> tabs;
+
+    SearchState *searchState;
+    ZealNetworkAccessManager *zealNaManager;
+
+    Ui::MainWindow *ui;
+    QIcon icon;
+    ZealListModel zealList;
+
+    QLocalServer *localServer;
+    QMenu backMenu;
+    QMenu forwardMenu;
+    QDialog hackDialog;
+    bool treeViewClicked;
+
+    QKeySequence hotKey;
+    QSettings settings;
+    QTabBar tabBar;
+    ZealNativeEventFilter nativeFilter;
+    ZealSettingsDialog settingsDialog;
+    QSystemTrayIcon *trayIcon;
+
+#ifdef USE_LIBAPPINDICATOR
+    AppIndicator *indicator;  //for Unity
+#endif
+
+    QMenu *trayIconMenu;
+    QMap<QString, QString> urls;
+    QString getDocsetName(const QString &urlPath);
 };
 
 #endif // MAINWINDOW_H
