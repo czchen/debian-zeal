@@ -14,7 +14,7 @@ Build-Depends: debhelper (>= 9),
 Standards-Version: 3.9.6
 Homepage: http://zealdocs.org/
 Vcs-Git: git://anonscm.debian.org/collab-maint/zeal.git
-Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/zeal.git;a=summary
+Vcs-Browser: http://anonscm.debian.org/cgit/collab-maint/zeal.git
 
 Package: zeal
 Architecture: any
