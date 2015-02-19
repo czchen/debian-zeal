@@ -9,7 +9,7 @@ export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 export QT_SELECT=qt5
 
 %:
-	dh $@ --buildsystem=qmake --dbg-package=zeal-dbg
+	dh $@ --buildsystem=qmake --dbg-package=zeal-dbg --fail-missing
 
 override_dh_auto_configure:
 	dh_auto_configure -- DESTDIR=$(CURDIR)/build $(CURDIR)/zeal/zeal.pro
