@@ -13,8 +13,8 @@ Build-Depends: debhelper (>= 9),
                qtbase5-private-dev,
 Standards-Version: 3.9.6
 Homepage: http://zealdocs.org/
-#Vcs-Git: git://anonscm.debian.org/collab-maint/zeal.git
-#Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/zeal.git;a=summary
+Vcs-Git: git://anonscm.debian.org/collab-maint/zeal.git
+Vcs-Browser: http://anonscm.debian.org/?p=collab-maint/zeal.git;a=summary
 
 Package: zeal
 Architecture: any
