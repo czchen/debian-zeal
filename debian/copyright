@@ -6,6 +6,10 @@ Files: *
 Copyright: 2013-2014 Jerzy Kozera
 License: GPL-3+
 
+Files: zeal/lineedit.*
+Copyright: Copyright (c) 2007 Trolltech ASA <info@trolltech.com>
+License: GPL-3+
+
 Files: zeal/widgets/razorshortcutbutton*
 Copyright: 2010-2011 Razor team
 License: LGPL-2.1+
