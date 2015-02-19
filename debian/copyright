@@ -20,7 +20,7 @@ License: GPL-2+
 
 Files: zeal/quazip/*
 Copyright: 2005-2014 Sergey A. Tachenov
-License: LGPL-2.1+
+License: LGPL-2+
 
 Files: zeal/quazip/crypt.h zeal/quazip/ioapi.h zeal/quazip/qioapi.cpp zeal/quazip/unzip.* zeal/quazip/zip.*
 Copyright: 1998-2005 Gilles Vollant, Jean-loup Gailly and Mark Adler
