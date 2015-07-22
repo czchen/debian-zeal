@@ -1,2 +1,2 @@
 version=3
-https://github.com/jkozera/zeal/releases .*/(\d\S*).tar.gz
+https://github.com/jkozera/zeal/releases .*/v(\d\S*).tar.gz
