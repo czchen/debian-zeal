@@ -1,9 +1,10 @@
-zeal (1:0.1.1-1) UNRELEASED; urgency=medium
+zeal (1:0.1.1-1) unstable; urgency=medium
 
   * New upstream release
   * Remove unused libquazip-qt5 patch
+  * Update copyright
 
- -- ChangZhuo Chen (陳昌倬) <czchen@gmail.com>  Thu, 23 Jul 2015 09:15:56 +0800
+ -- ChangZhuo Chen (陳昌倬) <czchen@gmail.com>  Thu, 23 Jul 2015 21:23:15 +0800
 
 zeal (20141123-1) unstable; urgency=low
 
