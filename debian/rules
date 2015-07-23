@@ -1,19 +1,23 @@
 #!/usr/bin/make -f
 #DH_VERBOSE = 1
 
+export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+export QT_SELECT=qt5
+
 DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/default.mk
-
-export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
-
-export QT_SELECT=qt5
 
 %:
 	dh $@ --buildsystem=qmake --dbg-package=zeal-dbg --fail-missing
 
 override_dh_auto_configure:
-	dh_auto_configure -- DESTDIR=$(CURDIR)/build $(CURDIR)/zeal/zeal.pro
-
-override_dh_fixperms:
-	dh_fixperms
-	find $(CURDIR)/debian/zeal -name '*.png' -type f -exec chmod -x {} \;
+	# FIXME: Cannot build this project with "-nocache", but don't know how
+	# to disable it.
+	qmake -makefile \
+		"QMAKE_CFLAGS_RELEASE=${CFLAGS}" \
+		"QMAKE_CFLAGS_DEBUG=${CFLAGS}" \
+		"QMAKE_CXXFLAGS_RELEASE=${CXXFLAGS}" \
+		"QMAKE_CXXFLAGS_DEBUG=${CXXFLAGS}" \
+		"QMAKE_LDFLAGS_RELEASE=${LDFLAGS}" \
+		"QMAKE_LDFLAGS_DEBUG=${LDFLAGS}" \
+		QMAKE_STRIP=: PREFIX=/usr
