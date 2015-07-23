@@ -3,13 +3,11 @@ Section: utils
 Priority: optional
 Maintainer: ChangZhuo Chen (陳昌倬) <czchen@gmail.com>
 Build-Depends: debhelper (>= 9),
-               bsdtar,
                libappindicator-dev,
+               libarchive-dev,
                libqt5webkit5-dev,
-               libquazip-qt5-dev,
-               libxcb-keysyms1-dev,
                qt5-qmake,
-               qtbase5-dev,
+               qtbase5-dev (>= 5.2.0),
                qtbase5-private-dev,
 Standards-Version: 3.9.6
 Homepage: http://zealdocs.org/
